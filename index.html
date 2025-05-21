@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TicTacToe 11 by JunaidAli</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: url('https://images.unsplash.com/photo-1612831455543-82b22c8cd07d') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: rgba(0, 0, 0, 0.75);
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 0 20px #000;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 5px;
+    }
+
+    .creator {
+      color: #0af;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 15px 0;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background: #222;
+      color: white;
+      font-size: 2.5rem;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      user-select: none;
+    }
+
+    .cell:hover {
+      background: #333;
+      transform: scale(1.05);
+    }
+
+    .cell.winner {
+      background: #0f0 !important;
+      color: #000;
+      font-weight: bold;
+    }
+
+    .status, .score {
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      background: #0af;
+      color: white;
+      border-radius: 8px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #08c;
+    }
+
+    @media (max-width: 400px) {
+      .cell {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+      }
+
+      h1 {
+        font-size: 1.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>TicTacToe 11</h1>
+    <div class="creator">Created by JunaidAli</div>
+    <div class="board" id="board"></div>
+    <div class="status" id="status">Player X's turn</div>
+    <div class="score" id="score">X: 0 | O: 0</div>
+    <button onclick="resetGame()">Restart</button>
+  </div>
+
+  <!-- Sound and Music -->
+  <audio id="clickSound" src="https://www.soundjay.com/button/button-3.mp3" preload="auto"></audio>
+  <audio id="bgMusic" src="https://www.bensound.com/bensound-music/bensound-sunny.mp3" autoplay loop></audio>
+
+  <script>
+    const board = document.getElementById('board');
+    const statusText = document.getElementById('status');
+    const scoreText = document.getElementById('score');
+    const clickSound = document.getElementById('clickSound');
+    const bgMusic = document.getElementById('bgMusic');
+
+    let cells = [];
+    let currentPlayer = 'X';
+    let gameActive = true;
+    let scores = { X: 0, O: 0 };
+
+    const winPatterns = [
+      [0,1,2], [3,4,5], [6,7,8],
+      [0,3,6], [1,4,7], [2,5,8],
+      [0,4,8], [2,4,6]
+    ];
+
+    function createBoard() {
+      board.innerHTML = '';
+      cells = [];
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.addEventListener('click', () => handleClick(i));
+        board.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+
+    function handleClick(index) {
+      if (!gameActive || cells[index].textContent !== '') return;
+      clickSound.currentTime = 0;
+      clickSound.play();
+
+      cells[index].textContent = currentPlayer;
+
+      if (checkWinner()) {
+        statusText.textContent = `Player ${currentPlayer} wins! ??`;
+        scores[currentPlayer]++;
+        updateScore();
+        gameActive = false;
+        return;
+      }
+
+      if (cells.every(cell => cell.textContent !== '')) {
+        statusText.textContent = "It's a draw!";
+        return;
+      }
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusText.textContent = `Player ${currentPlayer}'s turn`;
+
+      if (currentPlayer === 'O') {
+        setTimeout(aiMove, 500);
+      }
+    }
+
+    function aiMove() {
+      if (!gameActive) return;
+
+      const emptyCells = cells
+        .map((cell, i) => cell.textContent === '' ? i : null)
+        .filter(i => i !== null);
+
+      const move = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      handleClick(move);
+    }
+
+    function checkWinner() {
+      return winPatterns.some(pattern => {
+        const [a,b,c] = pattern;
+        if (
+          cells[a].textContent &&
+          cells[a].textContent === cells[b].textContent &&
+          cells[b].textContent === cells[c].textContent
+        ) {
+          cells[a].classList.add('winner');
+          cells[b].classList.add('winner');
+          cells[c].classList.add('winner');
+          return true;
+        }
+        return false;
+      });
+    }
+
+    function resetGame() {
+      currentPlayer = 'X';
+      gameActive = true;
+      statusText.textContent = `Player ${currentPlayer}'s turn`;
+      createBoard();
+    }
+
+    function updateScore() {
+      scoreText.textContent = `X: ${scores.X} | O: ${scores.O}`;
+    }
+
+    // Start game
+    createBoard();
+    bgMusic.volume = 0.3;
+  </script>
+</body>
+</html>
